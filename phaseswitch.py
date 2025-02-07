@@ -11,15 +11,25 @@ from bs4 import BeautifulSoup
 _LOGGER = logging.getLogger(__name__)
 
 
-def getPhasenWWW(parsedPage):
-    for elm in parsedPage.select(
-        'select#currentLimiterPhaseSelection>option[selected="selected"]'
-    ):
+def getPhasenWWW(parsedPage, page):
+    phaseSelector = parsedPage.select(
+        'select#currentLimiterPhaseSelection>option[selected="selectedx"]'
+    )
+
+    for elm in phaseSelector:
         if elm["id"] == "currentLimiterOnePhase":
             return 1
         elif elm["id"] == "currentLimiterThreePhase":
             return 3
-    raise RuntimeError("Unknown Phase")
+
+    try:
+        with open('phaseswitch.log', 'w') as writer:
+            writer.write(page)
+    except Exception:
+        pass
+
+    raise RuntimeError(f"Unknown Phase. Logfile phaseswitch.log created! Length: {len(phaseSelector)} Elements: {[elm["id"] for elm in phaseSelector]}")
+
 
 async def login(ip, user, pwd, nrOfPhases):
         jar = aiohttp.CookieJar(unsafe=True)
@@ -48,7 +58,7 @@ async def login(ip, user, pwd, nrOfPhases):
 
             # Get Nr of used Phases
             parsedPage = BeautifulSoup(page, "html.parser")
-            print("Used Phases: ", getPhasenWWW(parsedPage))
+            print("Used Phases: ", getPhasenWWW(parsedPage, page))
             if nrOfPhases == None:
                 await session.close()
                 return
@@ -70,7 +80,7 @@ async def login(ip, user, pwd, nrOfPhases):
             ) as response:
                 page = await response.text()
                 parsedPage = BeautifulSoup(page, "html.parser")
-                print("Changed to: ", getPhasenWWW(parsedPage))
+                print("Changed to: ", getPhasenWWW(parsedPage, page))
             await session.close()
 
 def run(ip, user, password, phases):
