@@ -24,6 +24,12 @@ def getPhasenWWW(parsedPage, page):
 
     try:
         with open('phaseswitch.log', 'w') as writer:
+            writer.write(f"Selected-Options: {[elm["id"] for elm in phaseSelector]}\n")
+            options = parsedPage.select(
+             'select#currentLimiterPhaseSelection>option'
+            )
+            writer.write(f"Options: {[elm["id"] for elm in options]}\n")
+
             writer.write(page)
     except Exception:
         pass
