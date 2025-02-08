@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def getPhasenWWW(parsedPage, page):
     phaseSelector = parsedPage.select(
-        'select#currentLimiterPhaseSelection>option[selected="selectedx"]'
+        'select#currentLimiterPhaseSelection>option[selected="selected"]'
     )
 
     for elm in phaseSelector:
