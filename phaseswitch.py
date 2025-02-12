@@ -11,6 +11,10 @@ from bs4 import BeautifulSoup
 _LOGGER = logging.getLogger(__name__)
 
 
+def saveLogFile(page):
+        with open('phaseswitch.log', 'w') as writer:
+            writer.write(page)
+
 def getPhasenWWW(parsedPage, page):
     phaseSelector = parsedPage.select(
         'select#currentLimiterPhaseSelection>option[selected="selected"]'
@@ -37,7 +41,7 @@ def getPhasenWWW(parsedPage, page):
     raise RuntimeError(f"Unknown Phase. Logfile phaseswitch.log created! Length: {len(phaseSelector)} Elements: {[elm["id"] for elm in phaseSelector]}")
 
 
-async def login(ip, user, pwd, nrOfPhases):
+async def login(ip, user, pwd, nrOfPhases, current):
         jar = aiohttp.CookieJar(unsafe=True)
         session = aiohttp.ClientSession(cookie_jar=jar)
         # get Session-Cookie
@@ -56,14 +60,21 @@ async def login(ip, user, pwd, nrOfPhases):
                 "button_login": "LOG+IN",
             },
         ) as response:
-            loggedIn = str(response.url).endswith("/index_main.php")
-            if not loggedIn:
-                await session.close()
-                raise RuntimeError("Login not possible")
             page = await response.text()
 
             # Get Nr of used Phases
             parsedPage = BeautifulSoup(page, "html.parser")
+
+
+            urlCheck = str(response.url).endswith("/index_main.php")
+            inputCheck = len(parsedPage.select('input[name="username"]'))
+
+            if not urlCheck or inputCheck:
+                await session.close()
+                saveLogFile(page)
+                raise RuntimeError(f"Login failed! [{response.url},{inputCheck}]")
+
+
             print("Used Phases: ", getPhasenWWW(parsedPage, page))
             if nrOfPhases == None:
                 await session.close()
@@ -80,7 +91,7 @@ async def login(ip, user, pwd, nrOfPhases):
                 "http://" + ip + "/index_main.php",
                 data={
                     "currentLimiterPhaseSelection": value,
-                    "currentLimiterValue": 32,
+                    "currentLimiterValue": current,
                     "button_current_limiter_settings": "Daten+absenden",
                 },
             ) as response:
@@ -89,11 +100,11 @@ async def login(ip, user, pwd, nrOfPhases):
                 print("Changed to: ", getPhasenWWW(parsedPage, page))
             await session.close()
 
-def run(ip, user, password, phases):
+def run(ip, user, password, phases, current):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        asyncio.run(login(ip, user, password, phases))
+        asyncio.run(login(ip, user, password, phases,current))
     except KeyboardInterrupt:
         pass
 
@@ -103,6 +114,6 @@ if __name__ == "__main__":
     parser.add_argument("user")
     parser.add_argument("password")
     parser.add_argument('phases', nargs='?', default=None)
+    parser.add_argument('current', nargs='?', default=32)
     args = parser.parse_args()
-    print(args.phases)
-    run(args.ip, args.user, args.password, args.phases)
+    run(args.ip, args.user, args.password, args.phases, args.current)
