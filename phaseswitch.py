@@ -69,7 +69,7 @@ async def login(ip, user, pwd, nrOfPhases, current):
             urlCheck = str(response.url).endswith("/index_main.php")
             inputCheck = len(parsedPage.select('input[name="username"]'))
 
-            if not urlCheck or inputCheck:
+            if not urlCheck or inputCheck > 0:
                 await session.close()
                 saveLogFile(page)
                 raise RuntimeError(f"Login failed! [{response.url},{inputCheck}]")
