@@ -32,7 +32,7 @@ def getPhasenWWW(parsedPage, page):
             options = parsedPage.select(
              'select#currentLimiterPhaseSelection>option'
             )
-            writer.write(f"Options: {[elm["id"] for elm in options]}\n")
+            writer.write(f'Options: {[elm["id"] for elm in options]}\n')
 
             writer.write(page)
     except Exception:
